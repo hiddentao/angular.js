@@ -46,7 +46,7 @@ function setupModuleLoader(window) {
      * `angular.module` is used to configure the {@link AUTO.$injector $injector}.
      *
      * <pre>
-     * // Create a new module
+     * // Create a new module, overriding previously created module of same name
      * var myModule = angular.module('myModule', []);
      *
      * // register a new service
@@ -57,6 +57,18 @@ function setupModuleLoader(window) {
      *   // Configure existing providers
      *   $locationProvider.hashPrefix('!');
      * });
+     * </pre>
+     *
+     * If you omit the second argument to `angular.module()` then Angular will fetch the 
+     * existing module, throwing an error if it doesn't already exist. You can easily add 
+     * dependencies to a module later on::
+     * 
+     * <pre>
+     * // Get previously created module
+     * var myModule = angular.module('myModule');
+     *
+     * // Add dependencies to it
+     * myModule.dependencies(['otherModule1']);
      * </pre>
      *
      * Then you can create an injector and load your modules like this:
@@ -127,6 +139,17 @@ function setupModuleLoader(window) {
            * @description
            */
           name: name,
+
+
+          /**
+           * @ngdoc method
+           * @name angular.Module#dependencies
+           * @methodOf angular.Module
+           * @param {Array} deps dependencies to add to module
+           * @description
+           * Add modules this module's list of dependencies.
+           */
+          dependencies: addDependencies(),
 
 
           /**
@@ -288,6 +311,24 @@ function setupModuleLoader(window) {
         }
 
         return  moduleInstance;
+
+
+        /**
+         * Get function for adding dependencies.
+         */
+        function addDependencies() {
+          return function(deps) {
+            if (deps instanceof Array) {
+              throw ngMinErr('badtype', 'dependencies must be an array', context);        
+            }
+            forEach(deps, function(key, value) {
+              // injector module loader will take care of duplicates later on
+              moduleInstance.requires.push(value);  
+            });
+            return moduleInstance;
+          };
+        }
+
 
         /**
          * @param {string} provider
